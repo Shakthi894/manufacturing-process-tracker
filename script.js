@@ -13,6 +13,7 @@ let editingProjectId = null;
 
 /* Load & Save */
 async function loadData() {
+
     const { data, error } = await supabase
         .from("projects")
         .select("*")
@@ -20,31 +21,41 @@ async function loadData() {
 
     if (error) {
         console.error("Load error:", error);
+        appData.projects = [];
+        renderAll();
         return;
     }
 
-    // If table empty → avoid crash
     if (!data || data.length === 0) {
         appData.projects = [];
         renderAll();
         return;
     }
 
-    // Map safely
-    appData.projects = data.map(row => row.data || {});
+    // Normalize data safely
+    appData.projects = data.map(row => {
+        const project = row.data || {};
+
+        return {
+            id: project.id || Date.now(),
+            name: project.name || "Untitled",
+            jobs: Array.isArray(project.jobs) ? project.jobs : []
+        };
+    });
 
     renderAll();
 }
 async function saveData() {
     // Delete all rows first (simple sync approach)
-    await supabase.from("projects").delete().neq("id", 0);
+    const del = await supabase.from("projects").delete().neq("id", 0);
+    if (del.error) console.error('Delete error:', del.error);
 
     for (const project of appData.projects) {
-        await supabase.from("projects").insert({ data: project });
+        const { error } = await supabase.from("projects").insert({ data: project });
+        if (error) console.error('Insert error:', error);
     }
 
     updateDashboard();
-    renderAll();
 }
 
 /* Modals */
@@ -69,18 +80,21 @@ function closeModals() {
 }
 
 /* Save Project */
+/* Save Project */
 document.getElementById("save-project-btn").onclick = async () => {
     const name = document.getElementById("project-name-input").value.trim();
     if(!name) return;
 
     if(editingProjectId){
         const p = appData.projects.find(p=>p.id===editingProjectId);
-        p.name = name;
+        if (p) p.name = name;
     } else {
         appData.projects.push({id:Date.now(), name, jobs:[]});
     }
 
-    await saveData(); closeModals();
+    await saveData();
+    await loadData();
+    closeModals();
 };
 
 /* Save Job */
@@ -92,11 +106,14 @@ document.getElementById("save-job-btn").onclick = async () => {
     const processes = selectedProcesses.length > 0 ? selectedProcesses.map(p=>({name:p,status:"Pending"})) : appData.availableProcesses.map(p=>({name:p,status:"Pending"}));
 
     const p = appData.projects.find(p=>p.id===activeProjectIdForJob);
+    if(!p) return;
+
     p.jobs.push({id:Date.now(), name, qty, processes});
 
-    await saveData(); closeModals();
+    await saveData();
+    await loadData();
+    closeModals();
 };
-
 /* Render */
 function renderAll() {
     const container = document.getElementById("project-list-container");
@@ -111,12 +128,12 @@ function renderAll() {
                 <button class="btn btn-outline" onclick="openJobModal(${p.id})">+ Job</button>
             </div>
             <div class="job-list">
-                ${p.jobs.map(j=>`
+                ${(p.jobs || []).map(j => `
                     <div class="job-item">
                         <h4>${j.name} <span class="job-qty">QTY:${j.qty}</span></h4>
                         <div class="process-steps">
-                            ${j.processes.map(pr=>`
-                                <div class="step status-${pr.status.toLowerCase().replace(" ","-")}">
+                            ${(j.processes || []).map(pr=>`
+                                <div class="step status-${(pr.status||'Pending').toLowerCase().replace(" ","-")}">
                                     ${pr.name}
                                 </div>
                             `).join("")}
@@ -134,7 +151,7 @@ function renderAll() {
 /* Dashboard */
 function updateDashboard(){
     document.getElementById("stat-total-projects").innerText = appData.projects.length;
-    document.getElementById("stat-active-jobs").innerText = appData.projects.reduce((a,b)=>a+b.jobs.length,0);
+    document.getElementById("stat-active-jobs").innerText = appData.projects.reduce((a,b)=>a + ((b.jobs && b.jobs.length) || 0),0);
     document.getElementById("stat-overall-progress").innerText = "0%";
 }
 
@@ -189,7 +206,7 @@ loadData();
 
 // Real-time updates
 supabase
-  .channel('realtime projects')
+  .channel('projects_changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, payload => {
       console.log("Change detected", payload);
       loadData();
