@@ -69,7 +69,7 @@ function closeModals() {
 }
 
 /* Save Project */
-document.getElementById("save-project-btn").onclick = () => {
+document.getElementById("save-project-btn").onclick = async () => {
     const name = document.getElementById("project-name-input").value.trim();
     if(!name) return;
 
@@ -80,11 +80,11 @@ document.getElementById("save-project-btn").onclick = () => {
         appData.projects.push({id:Date.now(), name, jobs:[]});
     }
 
-    saveData(); renderAll(); closeModals();
+    await saveData(); closeModals();
 };
 
 /* Save Job */
-document.getElementById("save-job-btn").onclick = () => {
+document.getElementById("save-job-btn").onclick = async () => {
     const name = document.getElementById("job-name-input").value.trim();
     const qty = document.getElementById("job-qty-input").value;
 
@@ -94,7 +94,7 @@ document.getElementById("save-job-btn").onclick = () => {
     const p = appData.projects.find(p=>p.id===activeProjectIdForJob);
     p.jobs.push({id:Date.now(), name, qty, processes});
 
-    saveData(); renderAll(); closeModals();
+    await saveData(); closeModals();
 };
 
 /* Render */
