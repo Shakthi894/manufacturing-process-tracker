@@ -23,7 +23,16 @@ async function loadData() {
         return;
     }
 
-    appData.projects = data.map(row => row.data);
+    // If table empty → avoid crash
+    if (!data || data.length === 0) {
+        appData.projects = [];
+        renderAll();
+        return;
+    }
+
+    // Map safely
+    appData.projects = data.map(row => row.data || {});
+
     renderAll();
 }
 async function saveData() {
@@ -35,6 +44,7 @@ async function saveData() {
     }
 
     updateDashboard();
+    renderAll();
 }
 
 /* Modals */
