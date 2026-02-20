@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manufacturing Process Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- SortableJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Logo -->
+    <div class="logo-container">
+        <img src="https://galexon.com/wp-content/uploads/2023/08/galexon-robotics-logo.png" class="logo-img">
+    </div>
+
+    <header>
+        <div>
+            <h1>Process Tracker</h1>
+            <p class="subtitle">Manufacturing Workflow Management</p>
+        </div>
+
+        <div class="header-actions">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="process-search-input" placeholder="Search Process Name..." oninput="handleSearch(this.value)">
+                <button onclick="clearSearch()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <button class="btn btn-outline export-btn" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> Export Excel
+            </button>
+
+            <button class="btn btn-primary" onclick="openProjectModal()">
+                <i class="fas fa-plus"></i> New Project
+            </button>
+        </div>
+    </header>
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+        <div class="stat-card"><h3>Total Projects</h3><div class="value" id="stat-total-projects">0</div></div>
+        <div class="stat-card"><h3>Active Jobs</h3><div class="value" id="stat-active-jobs">0</div></div>
+        <div class="stat-card"><h3>Overall Progress</h3><div class="value" id="stat-overall-progress">0%</div></div>
+    </div>
+
+    <!-- Project List -->
+    <div id="project-list-container"></div>
+
+    <!-- Older Projects -->
+    <div id="older-projects-section" class="hidden">
+        <div class="section-header">
+            <h2><i class="fas fa-archive"></i> Older Projects</h2>
+            <button class="btn btn-outline" onclick="toggleOlderProjects()">
+                <span id="older-toggle-text">Show Older Projects</span>
+            </button>
+        </div>
+        <div id="older-project-list-container"></div>
+    </div>
+
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="project-modal">
+    <div class="modal">
+        <h2>Project Details</h2>
+        <input type="text" id="project-name-input" class="form-control" placeholder="Enter project name">
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModals()">Cancel</button>
+            <button class="btn btn-primary" id="save-project-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="job-modal">
+    <div class="modal">
+        <h2>Job Details</h2>
+
+        <input type="text" id="job-name-input" class="form-control" placeholder="Job Name">
+        <input type="number" id="job-qty-input" class="form-control" value="1">
+
+        <input type="text" id="new-process-name" class="form-control" placeholder="New process name">
+        <button class="btn btn-primary" onclick="addCustomProcessType()">Add Process</button>
+
+        <div id="process-selector-list" class="draggable-list"></div>
+
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModals()">Cancel</button>
+            <button class="btn btn-primary" id="save-job-btn">Save Job</button>
+        </div>
+    </div>
+</div>
+
+<!-- External JS -->
+<script type="module" src="supabase.js"></script>
+<script type="module" src="script.js"></script>
+
+
+</body>
+</html>
